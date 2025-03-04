@@ -1,4 +1,12 @@
-Controller = {};
+
+Tools = {
+    skeet_menu_visibility = function(state, menu_ref_table)
+        for _, ref in pairs(menu_ref_table) do
+            ui.set_visible(ref, state)
+        end
+    end
+};
+
 Menu = {
     Skeet = {
         aa = {
@@ -35,12 +43,9 @@ Menu = {
     }
     
 };
-Controller.skeet_menu = function(state)
-    for _, ref in pairs(Menu.aa) do
-        ui.set_visible(ref, state)
-    end
-end
 Callback = {
-    ui.set_callback(Menu.Universal.global.Master,Controller.skeet_menu(ui.get(Menu.Universal.global.Master)))
+    ui.set_callback(Menu.Universal.global.Master, function()
+        Tools.skeet_menu_visibility(ui.get(Menu.Universal.global.Master),Menu.Skeet.aa)
+    end)
 }
 
