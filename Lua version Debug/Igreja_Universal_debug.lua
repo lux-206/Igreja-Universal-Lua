@@ -33,13 +33,14 @@ Menu = {
             Master = ui.new_checkbox("AA", "Anti-aimbot angles", " \a899CFFFF Igreja Universal"),
         },
     }
+    
 };
-Callback = {
-    ui.set_callback(Menu.Universal.global.Master,Controller.skeet_menu(ui.get(Menu.Universal.global.Master)))
-}
-
 Controller.skeet_menu = function(state)
     for _, ref in pairs(Menu.aa) do
         ui.set_visible(ref, state)
     end
 end
+Callback = {
+    ui.set_callback(Menu.Universal.global.Master,Controller.skeet_menu(ui.get(Menu.Universal.global.Master)))
+}
+
