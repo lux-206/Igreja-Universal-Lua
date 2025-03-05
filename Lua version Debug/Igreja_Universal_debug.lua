@@ -97,7 +97,7 @@ functions = {
 Callback = {
     Menu = {
         onload = function()
-            Tools.skeet_menu_visibility((true),Menu.Skeet.aa)
+            Tools.skeet_menu_visibility((true),Menu.Skeet.AA)
             functions.update_menu_visibility()
             Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
             Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Jesus)
@@ -106,7 +106,7 @@ Callback = {
             ui.set_visible(Menu.Universal.AA.Builder.Type, false)
         end,
         Skeet = ui.set_callback(Menu.Universal.global.Master, function()
-            Tools.skeet_menu_visibility(invert_bool(ui.get(Menu.Universal.global.Master)),Menu.Skeet.aa)
+            Tools.skeet_menu_visibility(invert_bool(ui.get(Menu.Universal.global.Master)),Menu.Skeet.AA)
         end),
         AA = {
             Master = ui.set_callback(Menu.Universal.global.Master, functions.update_menu_visibility),
@@ -114,7 +114,7 @@ Callback = {
             Type = ui.set_callback(Menu.Universal.AA.Builder.Type, functions.update_menu_visibility)
         },
         unload = client.set_event_callback("shutdown", function()
-            Tools.skeet_menu_visibility((true),Menu.Skeet.aa)
+            Tools.skeet_menu_visibility((true),Menu.Skeet.AA)
         end)
     }
    -- AA = client.set_event_callback("setup_command",)
