@@ -96,11 +96,17 @@ functions = {
                 end
             elseif selector == "Others" then
                 Tools.skeet_menu_visibility(true, Menu.Universal.AA.Others)
+                if ui.get(Menu.Universal.AA.Others.Roll_mode) == "Normal" then
+                    ui.set_visible(Menu.Universal.AA.Others.Roll, true)
+                    ui.set_visible(Menu.Universal.AA.Others.Roll_sway, false)
+                else
+                    ui.set_visible(Menu.Universal.AA.Others.Roll, false)
+                    ui.set_visible(Menu.Universal.AA.Others.Roll_sway, true)
+                end
             end
         end
     end
 };
-
 Callback = {
     Menu = {
         onload = function()
@@ -125,6 +131,6 @@ Callback = {
         end)
     }
    -- AA = client.set_event_callback("setup_command",)
-}
+};
 
 Callback.Menu.onload()
