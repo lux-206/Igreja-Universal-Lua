@@ -67,9 +67,6 @@ Menu = {
 };
 functions = {
     update_menu_visibility = function()
-        local master = ui.get(Menu.Universal.global.Master)
-        local selector = master and ui.get(Menu.Universal.AA.selector) or nil
-        local builder_type = selector == "Builder" and ui.get(Menu.Universal.AA.Builder.Type) or nil
 
         Tools.skeet_menu_visibility(false, Menu.Skeet.AA)
         Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
@@ -77,7 +74,17 @@ functions = {
         Tools.skeet_menu_visibility(false, Menu.Universal.AA.Others)
         ui.set_visible(Menu.Universal.AA.selector, false)
         ui.set_visible(Menu.Universal.AA.Builder.Type, false)
-    
+
+        local master = ui.get(Menu.Universal.global.Master)
+        if not master then 
+            Tools.skeet_menu_visibility(true, Menu.Skeet.AA)
+        else 
+            ui.set_visible(Menu.Universal.AA.selector, false)
+            ui.set_visible(Menu.Universal.AA.Builder.Type, false)
+        end
+        local selector = master and ui.get(Menu.Universal.AA.selector) or nil
+        local builder_type = selector == "Builder" and ui.get(Menu.Universal.AA.Builder.Type) or nil
+
         if master then
             ui.set_visible(Menu.Universal.AA.selector, true)
             if selector == "Builder" then
