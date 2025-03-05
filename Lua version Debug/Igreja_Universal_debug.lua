@@ -11,7 +11,7 @@ Tools = {
 };
 Menu = {
     Skeet = {
-        aa = {
+        AA = {
             enabled = ui.reference("AA", "Anti-aimbot angles", "Enabled"),
             pitch = ui.reference("AA", "Anti-aimbot angles", "Pitch"),
             pitch_val = select(2, ui.reference("AA", "Anti-aimbot angles", "Pitch")),
@@ -40,13 +40,12 @@ Menu = {
     },
     Universal = {
         global = {
-            Master = ui.new_checkbox("AA", "Anti-aimbot angles", " \a899CFFFF Igreja Universal"),
-
+            Master = ui.new_checkbox("AA", "Anti-aimbot angles", " \a899CFFFF Igreja Universal")
         },
         AA = {
-            selector = ui.new_combobox("AA", "Anti-aimbot angles", " \a899CFFFF Selector ", {"Builder","Others"})
-            Buider =  {
-                Type = ui.new_combobox("AA", "Anti-aimbot angles", "Builder type ", {" \aFF8282FF Default+","Jesus"}),
+            selector = ui.new_combobox("AA", "Anti-aimbot angles", " \a899CFFFF Selector ", {"Builder","Others"}),
+            Builder =  {
+                Type = ui.new_combobox("AA", "Anti-aimbot angles", "Builder type ", {"Default+","Jesus"}),
                 Default = {},
                 Jesus = {
                     Pitch = ui.new_combobox("AA", "Anti-aimbot angles", "Pitch", {"Off","Default","Up","Down","Minimal","Random"}),
@@ -66,33 +65,16 @@ Menu = {
     }
     
 };
-Callback = {
-    Menu = {
-        onload = function()
-            Tools.skeet_menu_visibility(true),Menu.Skeet.aa
-        end,
-        Skeet = ui.set_callback(Menu.Universal.global.Master, function()
-            Tools.skeet_menu_visibility(invert_bool(ui.get(Menu.Universal.global.Master)),Menu.Skeet.aa)
-        end),
-        AA = {
-            Master = ui.set_callback(Menu.Universal.global.Master, Controller.update_menu_visibility),
-            Selector = ui.set_callback(Menu.Universal.AA.selector, Controller.update_menu_visibility),
-            Type = ui.set_callback(Menu.Universal.AA.Builder.Type, Controller.update_menu_visibility)
-        }
-
-    }
-   -- AA = client.set_event_callback("setup_command",)
-}
 functions = {
     update_menu_visibility = function()
         local master = ui.get(Menu.Universal.global.Master)
         local selector = master and ui.get(Menu.Universal.AA.selector) or nil
         local builder_type = selector == "Builder" and ui.get(Menu.Universal.AA.Builder.Type) or nil
 
-        skeet_menu_visibility(false, Menu.Skeet.AA)
-        skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
-        skeet_menu_visibility(false, Menu.Universal.AA.Builder.Jesus)
-        skeet_menu_visibility(false, Menu.Universal.AA.Others)
+        Tools.skeet_menu_visibility(false, Menu.Skeet.AA)
+        Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
+        Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Jesus)
+        Tools.skeet_menu_visibility(false, Menu.Universal.AA.Others)
         ui.set_visible(Menu.Universal.AA.selector, false)
         ui.set_visible(Menu.Universal.AA.Builder.Type, false)
     
@@ -101,15 +83,39 @@ functions = {
             if selector == "Builder" then
                 ui.set_visible(Menu.Universal.AA.Builder.Type, true)
                 if builder_type == "Default+" then
-                    skeet_menu_visibility(true, Menu.Universal.AA.Builder.Default)
+                    Tools.skeet_menu_visibility(true, Menu.Universal.AA.Builder.Default)
                 elseif builder_type == "Jesus" then
-                    skeet_menu_visibility(true, Menu.Universal.AA.Builder.Jesus)
+                    Tools.skeet_menu_visibility(true, Menu.Universal.AA.Builder.Jesus)
                 end
             elseif selector == "Others" then
-                skeet_menu_visibility(true, Menu.Universal.AA.Others)
+                Tools.skeet_menu_visibility(true, Menu.Universal.AA.Others)
             end
         end
     end
 };
 
-
+Callback = {
+    Menu = {
+        onload = function()
+            Tools.skeet_menu_visibility((true),Menu.Skeet.aa)
+            functions.update_menu_visibility()
+            Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
+            Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Jesus)
+            Tools.skeet_menu_visibility(false, Menu.Universal.AA.Others)
+            ui.set_visible(Menu.Universal.AA.selector, false)
+            ui.set_visible(Menu.Universal.AA.Builder.Type, false)
+        end,
+        Skeet = ui.set_callback(Menu.Universal.global.Master, function()
+            Tools.skeet_menu_visibility(invert_bool(ui.get(Menu.Universal.global.Master)),Menu.Skeet.aa)
+        end),
+        AA = {
+            Master = ui.set_callback(Menu.Universal.global.Master, functions.update_menu_visibility),
+            Selector = ui.set_callback(Menu.Universal.AA.selector, functions.update_menu_visibility),
+            Type = ui.set_callback(Menu.Universal.AA.Builder.Type, functions.update_menu_visibility)
+        },
+        unload = client.set_event_callback("shutdown", function()
+            Tools.skeet_menu_visibility((true),Menu.Skeet.aa)
+        end)
+    }
+   -- AA = client.set_event_callback("setup_command",)
+}
