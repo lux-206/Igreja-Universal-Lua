@@ -97,13 +97,13 @@ functions = {
 Callback = {
     Menu = {
         onload = function()
-            Tools.skeet_menu_visibility((true),Menu.Skeet.AA)
-            functions.update_menu_visibility()
+           -- Tools.skeet_menu_visibility(true,Menu.Skeet.AA)
             Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
             Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Jesus)
             Tools.skeet_menu_visibility(false, Menu.Universal.AA.Others)
             ui.set_visible(Menu.Universal.AA.selector, false)
             ui.set_visible(Menu.Universal.AA.Builder.Type, false)
+            functions.update_menu_visibility()
         end,
         Skeet = ui.set_callback(Menu.Universal.global.Master, function()
             Tools.skeet_menu_visibility(invert_bool(ui.get(Menu.Universal.global.Master)),Menu.Skeet.AA)
