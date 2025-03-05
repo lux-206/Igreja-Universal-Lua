@@ -79,9 +79,6 @@ Callback = {
             Selector = ui.set_callback(Menu.Universal.AA.selector, Controller.update_menu_visibility),
             Type = ui.set_callback(Menu.Universal.AA.Builder.Type, Controller.update_menu_visibility)
         }
-        unload = client.set_event_callback("shutdown", function()
-            Tools.skeet_menu_visibility(true),Menu.Skeet.aa
-        end)
 
     }
    -- AA = client.set_event_callback("setup_command",)
