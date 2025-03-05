@@ -40,10 +40,11 @@ Menu = {
     },
     Universal = {
         global = {
-            Master = ui.new_checkbox("AA", "Anti-aimbot angles", " \a899CFFFF Igreja Universal")
+            Master = ui.new_checkbox("AA", "Anti-aimbot angles", " \a899CFFFF Igreja Universal"),
+            Master_selector = ui.new_combobox("AA", "Anti-aimbot angles", " \a899CFFFF Tab ", {"Rage","Anti-Aim"})
         },
         AA = {
-            selector = ui.new_combobox("AA", "Anti-aimbot angles", " \a899CFFFF Selector ", {"Builder","Others"}),
+            selector = ui.new_combobox("AA", "Anti-aimbot angles", " Selector ", {"Builder","Others"}),
             Builder =  {
                 Type = ui.new_combobox("AA", "Anti-aimbot angles", "Builder type ", {"Default+","Jesus"}),
                 Default = {},
@@ -62,6 +63,13 @@ Menu = {
                 Roll_sway = ui.new_slider("AA", "Anti-aimbot angles","Roll",0,45,0,true)
             }
         },
+        Rage = {
+            selector = ui.new_combobox("AA", "Anti-aimbot angles", "Ragebot modifications", {"Rage logic"}),
+            logic = {
+                Enable = ui.new_checkbox("AA", "Anti-aimbot angles", "Logic+"),
+                Mode = ui.new_combobox("AA", "Anti-aimbot angles", "Logic+ Mode", {"Simple","Advanced","Experiment"}),
+            }
+        },
     }
     
 };
@@ -72,37 +80,54 @@ functions = {
         Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Default)
         Tools.skeet_menu_visibility(false, Menu.Universal.AA.Builder.Jesus)
         Tools.skeet_menu_visibility(false, Menu.Universal.AA.Others)
+        Tools.skeet_menu_visibility(false, Menu.Universal.Rage.logic)
+        ui.set_visible(Menu.Universal.Rage.selector, false)
         ui.set_visible(Menu.Universal.AA.selector, false)
         ui.set_visible(Menu.Universal.AA.Builder.Type, false)
 
         local master = ui.get(Menu.Universal.global.Master)
+        local tab = ui.get(Menu.Universal.global.Master_selector)
         if not master then 
             Tools.skeet_menu_visibility(true, Menu.Skeet.AA)
         else 
             ui.set_visible(Menu.Universal.AA.selector, false)
             ui.set_visible(Menu.Universal.AA.Builder.Type, false)
         end
-        local selector = master and ui.get(Menu.Universal.AA.selector) or nil
-        local builder_type = selector == "Builder" and ui.get(Menu.Universal.AA.Builder.Type) or nil
+        local AAselector = master and ui.get(Menu.Universal.AA.selector) or nil
+        local builder_type = AAselector == "Builder" and ui.get(Menu.Universal.AA.Builder.Type) or nil
+
+        local RBselector = master and ui.get(Menu.Universal.Rage.selector) or nil
+        local rage_type = RBselector == "Rage logic" and ui.get(Menu.Universal.Rage.logic.Mode) and ui.get(Menu.Universal.Rage.logic.Enable) or nil
 
         if master then
-            ui.set_visible(Menu.Universal.AA.selector, true)
-            if selector == "Builder" then
-                ui.set_visible(Menu.Universal.AA.Builder.Type, true)
-                if builder_type == "Default+" then
-                    Tools.skeet_menu_visibility(true, Menu.Universal.AA.Builder.Default)
-                elseif builder_type == "Jesus" then
-                    Tools.skeet_menu_visibility(true, Menu.Universal.AA.Builder.Jesus)
+            if tab == "Anti-Aim" then
+                ui.set_visible(Menu.Universal.AA.selector, true)
+                if AAselector == "Builder" then
+                    ui.set_visible(Menu.Universal.AA.Builder.Type, true)
+                    if builder_type == "Default+" then
+                        Tools.skeet_menu_visibility(true, Menu.Universal.AA.Builder.Default)
+                    elseif builder_type == "Jesus" then
+                        Tools.skeet_menu_visibility(true, Menu.Universal.AA.Builder.Jesus)
+                    end
+                elseif AAselector == "Others" then
+                    Tools.skeet_menu_visibility(true, Menu.Universal.AA.Others)
+                    if ui.get(Menu.Universal.AA.Others.Roll_mode) == "Normal" then
+                        ui.set_visible(Menu.Universal.AA.Others.Roll, true)
+                        ui.set_visible(Menu.Universal.AA.Others.Roll_sway, false)
+                    else
+                        ui.set_visible(Menu.Universal.AA.Others.Roll, false)
+                        ui.set_visible(Menu.Universal.AA.Others.Roll_sway, true)
+                    end
                 end
-            elseif selector == "Others" then
-                Tools.skeet_menu_visibility(true, Menu.Universal.AA.Others)
-                if ui.get(Menu.Universal.AA.Others.Roll_mode) == "Normal" then
-                    ui.set_visible(Menu.Universal.AA.Others.Roll, true)
-                    ui.set_visible(Menu.Universal.AA.Others.Roll_sway, false)
-                else
-                    ui.set_visible(Menu.Universal.AA.Others.Roll, false)
-                    ui.set_visible(Menu.Universal.AA.Others.Roll_sway, true)
+            elseif tab == "Rage" then
+                ui.set_visible(Menu.Universal.Rage.selector, true)
+                if RBselector == "Rage logic" then
+                    ui.set_visible(Menu.Universal.Rage.logic.Enable, true)
+                    if ui.get(Menu.Universal.Rage.logic.Enable) then
+                        ui.set_visible(Menu.Universal.Rage.logic.Mode, true)
+                    end
                 end
+
             end
         end
     end
