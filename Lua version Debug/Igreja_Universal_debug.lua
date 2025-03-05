@@ -119,3 +119,5 @@ Callback = {
     }
    -- AA = client.set_event_callback("setup_command",)
 }
+
+Callback.Menu.onload()
