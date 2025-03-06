@@ -84,6 +84,7 @@ functions = {
         ui.set_visible(Menu.Universal.Rage.selector, false)
         ui.set_visible(Menu.Universal.AA.selector, false)
         ui.set_visible(Menu.Universal.AA.Builder.Type, false)
+        ui.set_visible(Menu.Universal.global.Master_selector, false)
 
         local master = ui.get(Menu.Universal.global.Master)
         local tab = ui.get(Menu.Universal.global.Master_selector)
@@ -100,6 +101,7 @@ functions = {
         local rage_type = RBselector == "Rage logic" and ui.get(Menu.Universal.Rage.logic.Mode) and ui.get(Menu.Universal.Rage.logic.Enable) or nil
 
         if master then
+            ui.set_visible(Menu.Universal.global.Master_selector, true)
             if tab == "Anti-Aim" then
                 ui.set_visible(Menu.Universal.AA.selector, true)
                 if AAselector == "Builder" then
