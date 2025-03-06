@@ -146,10 +146,16 @@ Callback = {
         Skeet = ui.set_callback(Menu.Universal.global.Master, function()
             Tools.skeet_menu_visibility(invert_bool(ui.get(Menu.Universal.global.Master)),Menu.Skeet.AA)
         end),
+        Global = {
+            Master = ui.set_callback(Menu.Universal.global.Master, functions.update_menu_visibility)
+        },
         AA = {
-            Master = ui.set_callback(Menu.Universal.global.Master, functions.update_menu_visibility),
             Selector = ui.set_callback(Menu.Universal.AA.selector, functions.update_menu_visibility),
             Type = ui.set_callback(Menu.Universal.AA.Builder.Type, functions.update_menu_visibility)
+        },
+        Rage = {
+            Selector = ui.set_callback(Menu.Universal.Rage.selector, functions.update_menu_visibility),
+            Type = ui.set_callback(Menu.Universal.Rage.logic.Enable, functions.update_menu_visibility)
         },
         unload = client.set_event_callback("shutdown", function()
             Tools.skeet_menu_visibility((true),Menu.Skeet.AA)
