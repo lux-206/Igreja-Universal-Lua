@@ -343,7 +343,6 @@ Menu = {
         
         Freestand = aa_group:checkbox("\rFreestand", false),
         FreestandKey = aa_group:hotkey("\rFreestand Key", true),
-        FreestandDisablers = aa_group:multiselect("\rFS Disablers", {"Air", "Slowmo", "Duck", "Manual"}),
         
         
         UnbalancedDormant = aa_group:checkbox("\vUnbalanced Dormant AA"),
@@ -517,21 +516,8 @@ local function handle_freestand()
     local local_player = entity.get_local_player()
     if not local_player then return false end
     
-    local disablers = ui.get(Menu.Extras.FreestandDisablers.ref)
-    
-    for _, disabler in ipairs(disablers) do
-        if disabler == "Air" then
-            local flags = entity.get_prop(local_player, "m_fFlags")
-            if bit.band(flags, 1) == 0 then return false end
-        elseif disabler == "Slowmo" then
-            if ui.get(Ref.Misc.slow[1]) and ui.get(Ref.Misc.slow[2]) then return false end
-        elseif disabler == "Duck" then
-            if entity.get_prop(local_player, "m_flDuckAmount") > 0.1 then return false end
-        elseif disabler == "Manual" then
-            if AntiAim.manual_yaw ~= 0 then return false end
-        end
-    end
-    
+
+
     ui.set(Ref.AA.freestanding[1], true)
     ui.set(Ref.AA.freestanding[2], "Always on")
     AntiAim.freestand_side = get_freestand_side()
@@ -914,7 +900,6 @@ local function UpdateMenuVisibility()
         ui.set_visible(Menu.Extras.PeekYaw.ref, is_extras and not fs_enabled)
         ui.set_visible(Menu.Extras.Freestand.ref, is_extras and not peek_enabled)
         ui.set_visible(Menu.Extras.FreestandKey.ref, is_extras and fs_enabled)
-        ui.set_visible(Menu.Extras.FreestandDisablers.ref, is_extras and fs_enabled)
         
         ui.set_visible(Menu.Extras.UnbalancedDormant.ref, is_extras)
         ui.set_visible(Menu.Extras.SafeHeadKnife.ref, is_extras)
