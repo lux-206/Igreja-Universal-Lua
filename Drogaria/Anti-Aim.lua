@@ -30,7 +30,11 @@ local clipboard = {
     end
 }
 
-pui.accent = "899CFFFF"
+local function rgb2hex(r, g, b)
+    return string.format("%02X%02X%02XFF", r, g, b)
+end
+
+pui.accent = rgb2hex(ui.get(ui.reference("Misc", "Settings", "Menu color")))
 pui.macros.title = "Drogaria Yaw"
 
 local Tools = {
@@ -140,13 +144,51 @@ Ref = {
     },
     Misc = {
         dt = {ui.reference("RAGE", "Aimbot", "Double tap")},
+        fd = {ui.reference("RAGE", "Other", "Duck peek assist")},
         hide = {ui.reference("AA", "Other", "On shot anti-aim")},
         slow = {ui.reference("AA", "Other", "Slow motion")},
         fakelag = {ui.reference("AA", "Fake lag", "Limit")},
-        quickpeek = {ui.reference("RAGE", "Other", "Quick peek assist")}
+        quickpeek = {ui.reference("RAGE", "Other", "Quick peek assist")},
+        legs = ui.reference("AA", "Other", "Leg movement"),
+        thirdperson = {ui.reference("VISUALS", "Effects", "Force third person (alive)")}
     }
 }
+local Visuals = {
+    notifications = {},
+    max_notifications = 6,
+    notification_duration = 5,
+    notification_fade = 0.5,
+    thirdperson_distance = 100,
+    thirdperson_target = 100,
+    watermark_alpha = 0,
+    zeus_warning_alpha = 0,
+    damage_markers = {},
+}
 
+local Misc = {
+    clantag_enabled = false,
+    clantag_prev = "",
+    last_anim_update = 0
+}
+local ground_ticks = 0
+
+local trashtalk_phrases = {
+    "1",
+    "sit down kid",
+    "too ez",
+    "nice try",
+    "?",
+    "ff pls",
+    "uninstall",
+    "outplayed",
+    "gg ez",
+    "cry more",
+    "mad?",
+    "skill diff",
+    "lucky shot?",
+    "sit",
+    "owned"
+}
 local aa_group = pui.group("AA", "Anti-aimbot angles")
 local other_group = pui.group("AA", "Other")
 
@@ -194,7 +236,7 @@ end)
 
 Menu = {
     MainSwitch = aa_group:checkbox("\v\f<title>"),
-    MainTab = aa_group:combobox("\vTab", {"Home", "Anti-Aim", "Others"}),
+    MainTab = aa_group:combobox("\vTab", {"Home", "Anti-Aim", "Visuals", "Misc"}),
     
     Home = {
         Label1 = aa_group:label("\vConfig System"),
@@ -344,7 +386,6 @@ Menu = {
         Freestand = aa_group:checkbox("\rFreestand", false),
         FreestandKey = aa_group:hotkey("\rFreestand Key", true),
         
-        
         UnbalancedDormant = aa_group:checkbox("\vUnbalanced Dormant AA"),
         
         SafeHeadKnife = aa_group:checkbox("\rSafe Head on Knife"),
@@ -355,8 +396,34 @@ Menu = {
         DisableFLExploits = aa_group:checkbox("\rDisable FL on Exploits"),
     },
     
-    Other = {
-        Placeholder = aa_group:checkbox("\vPlaceholder")
+    Visuals = {
+        Watermark = aa_group:checkbox("\vWatermark"),
+        WatermarkColor = aa_group:color_picker("\vWatermark Color", 137, 156, 255, 255),
+        
+        HitLogs = aa_group:checkbox("\rHit/Miss Logs"),
+        LogsColor = aa_group:color_picker("\rLogs Color", 137, 156, 255, 255),
+
+        ConsoleLogs = aa_group:checkbox("\vConsole Logs"),
+        
+        DamageMarker = aa_group:checkbox("\v3D Damage Marker"),
+        DamageMarkerColor = aa_group:color_picker("\vDamage Marker Color", 255, 255, 255, 255),
+        
+        ZeusWarning = aa_group:checkbox("\rZeus Warning"),
+        ZeusWarningDistance = aa_group:slider("\rZeus Distance", 200, 700, 500, true, "u"),
+        
+        ThirdpersonAnim = aa_group:checkbox("\vThirdperson"),
+        ThirdpersonMin = aa_group:slider("\rDistance", 50, 300, 100, true, "u")
+
+    },
+    
+    Misc = {
+        Clantag = aa_group:checkbox("\vClantag"),
+        
+        Trashtalk = aa_group:checkbox("\rTrashtalk"),
+        
+        AnimBreaker = aa_group:checkbox("\vAnimation Breakers"),
+        AnimBreakerModes = aa_group:multiselect("\vAnim Modes", {"Static legs", "Air legs", "Leg fucker"}),
+
     }
 }
 
@@ -409,6 +476,328 @@ ConfigSystem.update_list = function()
         ui.update(Menu.Home.ConfigList.ref, "-")
     else
         ui.update(Menu.Home.ConfigList.ref, names)
+    end
+end
+
+local function add_notification(text, r, g, b)
+    table.insert(Visuals.notifications, {
+        text = text,
+        time = globals.realtime(),
+        r = r or 255,
+        g = g or 255,
+        b = b or 255,
+        alpha = 0
+    })
+    
+    while #Visuals.notifications > Visuals.max_notifications do
+        table.remove(Visuals.notifications, 1)
+    end
+end
+
+local function lerp(a, b, t)
+    return a + (b - a) * t
+end
+
+local function draw_notifications()
+    local screen_x, screen_y = client.screen_size()
+    local y_offset = screen_y - 300
+    local time = globals.frametime()
+    
+    for i = #Visuals.notifications, 1, -1 do
+        local notif = Visuals.notifications[i]
+        local life_time = globals.realtime() - notif.time
+        
+        if life_time > Visuals.notification_duration then
+            table.remove(Visuals.notifications, i)
+        else
+            local alpha = 255
+            if life_time < Visuals.notification_fade then
+                alpha = lerp(0, 255, life_time / Visuals.notification_fade)
+            elseif life_time > Visuals.notification_duration - Visuals.notification_fade then
+                local fade_progress = (life_time - (Visuals.notification_duration - Visuals.notification_fade)) / Visuals.notification_fade
+                alpha = lerp(255, 0, fade_progress)
+            end
+            
+            notif.alpha = lerp(notif.alpha, alpha, time * 8)
+            
+            renderer.text(screen_x/2 - 10, y_offset, notif.r, notif.g, notif.b, notif.alpha, "c", 0, notif.text)
+            y_offset = y_offset - 20
+        end
+    end
+end
+
+local function on_aim_hit(e)
+    local target_name = entity.get_player_name(e.target)
+    local hitgroup = ({"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg", "right leg", "neck"})[e.hitgroup + 1] or "body"
+    local damage = e.damage
+    local health = entity.get_prop(e.target, "m_iHealth")
+    
+    local r, g, b = ui.get(Menu.Visuals.LogsColor.ref)
+    local text = string.format("%s in the %s for %d damage (%d health remaining)", target_name, hitgroup, damage, health)
+    
+    if ui.get(Menu.Visuals.HitLogs.ref) then
+        add_notification(string.format("Hit %s in the %s for %d damage (%d health remaining)", target_name, hitgroup, damage, health), r, g, b)
+    end
+    
+    if ui.get(Menu.Visuals.ConsoleLogs.ref) then
+        client.color_log(172, 224, 13, "[+]\0")
+        client.color_log(255, 255, 255, text)
+    end
+end
+
+
+local function on_aim_miss(e)
+    local target_name = entity.get_player_name(e.target)
+    local hitgroup = ({"generic", "head", "chest", "stomach", "left arm", "right arm", "left leg", "right leg", "neck"})[e.hitgroup + 1] or "body"
+    local reason = e.reason
+    
+    local text = string.format("%s's %s due to %s", target_name, hitgroup, reason)
+    
+    if ui.get(Menu.Visuals.HitLogs.ref) then
+        add_notification(string.format("Missed %s's %s due to %s", target_name, hitgroup, reason), 255, 100, 100)
+    end
+    
+    if ui.get(Menu.Visuals.ConsoleLogs.ref) then
+        client.color_log(255, 0, 0, "[-]\0")
+        client.color_log(255, 255, 255, text)
+    end
+end
+
+local function on_player_hurt(e)
+    if not ui.get(Menu.Visuals.DamageMarker.ref) then return end
+    
+    local attacker = client.userid_to_entindex(e.attacker)
+    local victim = client.userid_to_entindex(e.userid)
+    
+    if attacker ~= entity.get_local_player() then return end
+    if not entity.is_enemy(victim) then return end
+    
+    local x, y, z = entity.hitbox_position(victim, 0)
+    if not x then return end
+    
+    table.insert(Visuals.damage_markers, {
+        x = x,
+        y = y,
+        z = z + 50,
+        damage = e.dmg_health,
+        time = globals.realtime(),
+        alpha = 255,
+        hitbox = e.hitgroup,
+    })
+end
+
+local function draw_damage_markers()
+    if not ui.get(Menu.Visuals.DamageMarker.ref) then return end
+    
+ 
+    local r, g, b = ui.get(Menu.Visuals.DamageMarkerColor.ref)
+    local time = globals.frametime()
+    
+    for i = #Visuals.damage_markers, 1, -1 do
+        local marker = Visuals.damage_markers[i]
+        local life_time = globals.realtime() - marker.time
+        
+        if life_time > 4 then
+            table.remove(Visuals.damage_markers, i)
+        else
+            marker.z = marker.z + 50 * time
+            marker.alpha = lerp(marker.alpha, 0, time * 2)
+            Head = marker.hitbox
+            if Head == 1 then
+                r, g, b = 117, 160, 13
+            end
+            
+            local sx, sy = renderer.world_to_screen(marker.x, marker.y, marker.z)
+            if sx and sy then
+
+                renderer.text(sx, sy, r, g, b, marker.alpha, "c", 0, "-" .. marker.damage)
+            end
+        end
+    end
+end
+
+local function draw_zeus_warning()
+    if not ui.get(Menu.Visuals.ZeusWarning.ref) then return end
+    
+    local local_player = entity.get_local_player()
+    if not local_player or not entity.is_alive(local_player) then return end
+    
+    local lx, ly, lz = entity.get_prop(local_player, "m_vecOrigin")
+    local enemies = entity.get_players(true)
+    local in_danger = false
+    
+    for i = 1, #enemies do
+        local weapon = entity.get_player_weapon(enemies[i])
+        if weapon and entity.get_classname(weapon) == "CWeaponTaser" then
+            local ex, ey, ez = entity.get_prop(enemies[i], "m_vecOrigin")
+            local distance = Tools.distance(lx, ly, lz, ex, ey, ez)
+            
+            if distance <= ui.get(Menu.Visuals.ZeusWarningDistance.ref) then
+                in_danger = true
+                break
+            end
+        end
+    end
+    
+    local time = globals.frametime()
+    Visuals.zeus_warning_alpha = lerp(Visuals.zeus_warning_alpha, in_danger and 255 or 0, time * 10)
+    
+    if Visuals.zeus_warning_alpha > 5 then
+        local screen_x, screen_y = client.screen_size()
+        renderer.text(screen_x / 2, screen_y / 2 + 50, 255, 255, 0, Visuals.zeus_warning_alpha, "c", 0, "⚠ ZEUS WARNING ⚠")
+    end
+end
+
+local function draw_watermark()
+    if not ui.get(Menu.Visuals.Watermark.ref) then return end
+    
+    local time = globals.frametime()
+    Visuals.watermark_alpha = lerp(Visuals.watermark_alpha, 255, time * 5)
+    
+    local r, g, b = ui.get(Menu.Visuals.WatermarkColor.ref)
+    local screen_x, screen_y = client.screen_size()
+    
+    -- Measure text components
+    local cs_text = pui.macros.title
+    local version_text = "[Anti-Aim]"
+    local user_text = entity.get_player_name(entity.get_local_player()) .. " - gamesense"
+    
+    local cs_w, cs_h = renderer.measure_text("", cs_text)
+    local version_w, version_h = renderer.measure_text("", version_text)
+    local user_w, user_h = renderer.measure_text("", user_text)
+    
+    local total_w = cs_w + version_w
+    local x_pos = screen_x - total_w - 10
+    local y_pos = screen_y / 2 - 30
+    
+
+    renderer.text(x_pos, y_pos, 255, 255, 255, Visuals.watermark_alpha, "", 0, cs_text)
+    renderer.text(x_pos + cs_w, y_pos, r, g, b, Visuals.watermark_alpha, "", 0, version_text)
+    
+
+   -- renderer.gradient(x_pos, y_pos + cs_h, cs_w, 2, 255, 255, 255, Visuals.watermark_alpha * 0.8, 255, 255, 255, 0, true)
+   -- renderer.gradient(x_pos + cs_w, y_pos + cs_h, version_w, 2, r, g, b, Visuals.watermark_alpha * 0.8, r, g, b, 0, true)
+
+    renderer.text(x_pos, y_pos + 10, 255, 255, 255, Visuals.watermark_alpha, "", 0, user_text)
+end
+local function handle_animated_thirdperson()
+    if not ui.get(Menu.Visuals.ThirdpersonAnim.ref) then
+        cvar.cam_idealdist:set_float(100)
+        return
+    end
+    
+    if not ui.get(Ref.Misc.thirdperson[1]) then 
+        return 
+    end
+    
+    local local_player = entity.get_local_player()
+    if not local_player or not entity.is_alive(local_player) then return end
+
+    local dist = ui.get(Menu.Visuals.ThirdpersonMin.ref)
+
+    cvar.cam_idealdist:set_float(dist)
+end
+
+local clantag_data = {
+    last_update = 0,
+    animation_state = 0,
+    direction = 1  -- 1 for forward, -1 for backward
+}
+
+local function animate_clantag(text)
+    local padding = "               "
+    local full_text = padding .. text .. padding
+    local max_length = #full_text - 15
+    
+    -- Update animation every 0.3 seconds
+    local current_time = globals.realtime()
+    if current_time - clantag_data.last_update >= 0.3 then
+        clantag_data.last_update = current_time
+        
+        -- Move the animation
+        clantag_data.animation_state = clantag_data.animation_state + clantag_data.direction
+        
+        -- Reverse direction at the ends
+        if clantag_data.animation_state >= max_length then
+            clantag_data.direction = -1
+            clantag_data.animation_state = max_length
+        elseif clantag_data.animation_state <= 0 then
+            clantag_data.direction = 1
+            clantag_data.animation_state = 0
+        end
+    end
+    
+    local start_pos = clantag_data.animation_state + 1
+    return full_text:sub(start_pos, start_pos + 15)
+end
+
+local function handle_clantag()
+    if not ui.get(Menu.Misc.Clantag.ref) then
+        if Misc.clantag_enabled then
+            client.set_clan_tag("")
+            Misc.clantag_enabled = false
+            clantag_data.animation_state = 0
+            clantag_data.direction = 1
+        end
+        return
+    end
+    
+    Misc.clantag_enabled = true
+    local text = "Drogaria.yaw"
+    
+    if globals.tickcount() % 2 == 0 then
+        local tag = animate_clantag(text)
+        
+        if tag ~= Misc.clantag_prev then
+            client.set_clan_tag(tag)
+            Misc.clantag_prev = tag
+        end
+    end
+end
+
+local function on_player_death(e)
+    if not ui.get(Menu.Misc.Trashtalk.ref) then return end
+    
+    local attacker = client.userid_to_entindex(e.attacker)
+    local victim = client.userid_to_entindex(e.userid)
+    
+    if attacker ~= entity.get_local_player() then return end
+    if not entity.is_enemy(victim) then return end
+    
+    local phrase = trashtalk_phrases[math.random(1, #trashtalk_phrases)]
+    client.exec("say " .. phrase)
+end
+
+local function handle_anim_breakers()
+    if not ui.get(Menu.Misc.AnimBreaker.ref) then
+        ui.set(Ref.Misc.legs, "Never slide")
+        return
+    end
+    
+    local local_player = entity.get_local_player()
+    if not local_player or not entity.is_alive(local_player) then return end
+    
+    local modes = ui.get(Menu.Misc.AnimBreakerModes.ref)
+    local flags = entity.get_prop(local_player, "m_fFlags")
+    local on_ground = bit.band(flags, 1) == 1
+    
+    for _, mode in ipairs(modes) do
+        if mode == "Static legs" then
+            entity.set_prop(local_player, "m_flPoseParameter", 1, 0)
+        end
+        
+        if mode == "Air legs" and not on_ground then
+            entity.set_prop(local_player, "m_flPoseParameter", 1, 6)
+        end
+        
+        if mode == "Leg fucker" then
+            local time = globals.realtime()
+            if time - Misc.last_anim_update > 0.1 then
+                local leg_state = math.random(0, 2)
+                ui.set(Ref.Misc.legs, ({"Off", "Always slide", "Never slide"})[leg_state + 1])
+                Misc.last_anim_update = time
+            end
+        end
     end
 end
 
@@ -516,8 +905,6 @@ local function handle_freestand()
     local local_player = entity.get_local_player()
     if not local_player then return false end
     
-
-
     ui.set(Ref.AA.freestanding[1], true)
     ui.set(Ref.AA.freestanding[2], "Always on")
     AntiAim.freestand_side = get_freestand_side()
@@ -617,16 +1004,27 @@ local function handle_fast_ladder(cmd)
         end
     end
 end
+
 local function handle_disable_fl_exploits()
     if not ui.get(Menu.Extras.DisableFLExploits.ref) then
         if AntiAim.saved_fl_limit then
             ui.set(Ref.Misc.fakelag[1], AntiAim.saved_fl_limit)
             AntiAim.saved_fl_limit = nil
         end
-    return
+        return
     end
+    
     local dt_active = ui.get(Ref.Misc.dt[1]) and ui.get(Ref.Misc.dt[2])
     local hs_active = ui.get(Ref.Misc.hide[1]) and ui.get(Ref.Misc.hide[2])
+    local fd_active = ui.get(Ref.Misc.fd[1])
+    
+    if fd_active then
+        if AntiAim.saved_fl_limit then
+            ui.set(Ref.Misc.fakelag[1], AntiAim.saved_fl_limit)
+            AntiAim.saved_fl_limit = nil
+        end
+        return
+    end
 
     if (dt_active or hs_active) then
         if not AntiAim.saved_fl_limit then
@@ -640,23 +1038,24 @@ local function handle_disable_fl_exploits()
         end
     end
 end
+
 local function handle_unbalanced_dormant()
     if not ui.get(Menu.Extras.UnbalancedDormant.ref) then return false end
-    if not Tools.any_enemy_visible() then
-        ui.set(Ref.AA.yaw[2], 0)
-        ui.set(Ref.AA.jitter[1], "Center")
-        ui.set(Ref.AA.jitter[2], 3)
-        ui.set(Ref.AA.body[1], "Static")
-        ui.set(Ref.AA.body[2], 180)
-        return true
-    end
+        if not Tools.any_enemy_visible() then
+            ui.set(Ref.AA.yaw[2], 0)
+            ui.set(Ref.AA.jitter[1], "Center")
+            ui.set(Ref.AA.jitter[2], 3)
+            ui.set(Ref.AA.body[1], "Static")
+            ui.set(Ref.AA.body[2], 180)
+            
+        end
     return false
 end
+
 local function OnSetupCommand(cmd)
     if not ui.get(Menu.MainSwitch.ref) then return end
     local local_player = entity.get_local_player()
     if not local_player or not entity.is_alive(local_player) then return end
-
     handle_freestand()
     handle_disable_fl_exploits()
 
@@ -793,18 +1192,18 @@ local function OnSetupCommand(cmd)
         cmd.force_defensive = true
     end
 end
+
 local function UpdateMenuVisibility()
     local enabled = ui.get(Menu.MainSwitch.ref)
     local tab = ui.get(Menu.MainTab.ref)
     ui.set_visible(Menu.MainTab.ref, enabled)
-
     if not enabled then
         for _, ref in pairs({
             Menu.Home.Label1.ref, Menu.Home.ConfigName.ref, Menu.Home.SaveBtn.ref,
             Menu.Home.LoadBtn.ref, Menu.Home.DeleteBtn.ref, Menu.Home.ConfigList.ref,
             Menu.Home.RefreshBtn.ref, Menu.Home.Label2.ref, 
             Menu.Home.ImportBtn.ref, Menu.Home.ExportBtn.ref,
-            Menu.AntiAim.SubTab.ref, Menu.Builder.StateSelector.ref, Menu.Other.Placeholder.ref
+            Menu.AntiAim.SubTab.ref, Menu.Builder.StateSelector.ref
         }) do
             ui.set_visible(ref, false)
         end
@@ -819,12 +1218,21 @@ local function UpdateMenuVisibility()
             ui.set_visible(item.ref, false)
         end
         
+        for _, item in pairs(Menu.Visuals) do
+            ui.set_visible(item.ref, false)
+        end
+        
+        for _, item in pairs(Menu.Misc) do
+            ui.set_visible(item.ref, false)
+        end
+        
         return
     end
 
     local is_home = (tab == "Home")
     local is_antiaim = (tab == "Anti-Aim")
-    local is_others = (tab == "Others")
+    local is_visuals = (tab == "Visuals")
+    local is_misc = (tab == "Misc")
 
     ui.set_visible(Menu.Home.Label1.ref, is_home)
     ui.set_visible(Menu.Home.ConfigName.ref, is_home)
@@ -918,9 +1326,28 @@ local function UpdateMenuVisibility()
         end
     end
 
-    ui.set_visible(Menu.Other.Placeholder.ref, is_others)
+    ui.set_visible(Menu.Visuals.Watermark.ref, is_visuals)
+    ui.set_visible(Menu.Visuals.WatermarkColor.ref, is_visuals and ui.get(Menu.Visuals.Watermark.ref))
+    ui.set_visible(Menu.Visuals.HitLogs.ref, is_visuals)
+    ui.set_visible(Menu.Visuals.LogsColor.ref, is_visuals and ui.get(Menu.Visuals.HitLogs.ref))
+    ui.set_visible(Menu.Visuals.DamageMarker.ref, is_visuals)
+    ui.set_visible(Menu.Visuals.DamageMarkerColor.ref, is_visuals and ui.get(Menu.Visuals.DamageMarker.ref))
+    ui.set_visible(Menu.Visuals.ZeusWarning.ref, is_visuals)
+    ui.set_visible(Menu.Visuals.ZeusWarningDistance.ref, is_visuals and ui.get(Menu.Visuals.ZeusWarning.ref))
+    ui.set_visible(Menu.Visuals.ThirdpersonAnim.ref, is_visuals)
+    ui.set_visible(Menu.Visuals.ThirdpersonMin.ref, is_visuals and ui.get(Menu.Visuals.ThirdpersonAnim.ref))
+    ui.set_visible(Menu.Visuals.ConsoleLogs.ref, is_visuals)
+
+    
+
+    ui.set_visible(Menu.Misc.Clantag.ref, is_misc)
+    ui.set_visible(Menu.Misc.Trashtalk.ref, is_misc)
+    ui.set_visible(Menu.Misc.AnimBreaker.ref, is_misc)
+    ui.set_visible(Menu.Misc.AnimBreakerModes.ref, is_misc and ui.get(Menu.Misc.AnimBreaker.ref))
+
     Tools.skeet_menu_visibility(false, Ref.AA)
 end
+
 local function OnLoad()
     Tools.skeet_menu_visibility(false, Ref.AA)
     ConfigSystem.update_list()
@@ -929,14 +1356,37 @@ local function OnLoad()
         ui.set(Menu.Home.ConfigList.ref, 0)
     end
 end
+
 local function OnUnload()
     Tools.skeet_menu_visibility(true, Ref.AA)
     if AntiAim.saved_fl_limit then
         ui.set(Ref.Misc.fakelag[1], AntiAim.saved_fl_limit)
     end
+    if Misc.clantag_enabled then
+        client.set_clan_tag("")
+    end
+    ui.set(Ref.Misc.legs, "Never slide")
 end
 
+
+client.set_event_callback("pre_render", handle_anim_breakers)
+client.set_event_callback("player_death", on_player_death)
+client.set_event_callback("player_hurt", on_player_hurt)
+client.set_event_callback("aim_hit", on_aim_hit)
+client.set_event_callback("aim_miss", on_aim_miss)
 client.set_event_callback("shutdown", OnUnload)
 client.set_event_callback("setup_command", OnSetupCommand)
 client.set_event_callback("paint_ui", UpdateMenuVisibility)
+client.set_event_callback("paint", function()
+    draw_notifications()
+    draw_damage_markers()
+    draw_zeus_warning()
+    draw_watermark()
+    handle_clantag()
+end)
+
+client.set_event_callback("run_command", function()
+    handle_animated_thirdperson()
+    
+end)
 OnLoad()
