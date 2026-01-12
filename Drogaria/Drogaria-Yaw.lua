@@ -1,5 +1,4 @@
 -- This lua was made if love by devlux
-
 local pui = require("gamesense/pui")
 local base64 = require("gamesense/base64")
 local ffi = require("ffi")
@@ -245,7 +244,7 @@ Menu = {
         SaveBtn = aa_group:button("\vSave Config", function()
             local name = ui.get(Menu.Home.ConfigName.ref)
             if name == "" then
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Config name cannot be empty!")
                 return
             end
@@ -267,7 +266,7 @@ Menu = {
                 end
             end
             
-            client.color_log(137, 156, 255, "[Success] ")
+            client.color_log(137, 156, 255, "[Success] \0")
             client.color_log(255, 255, 255, "Config '" .. name .. "' saved!")
         end),
         LoadBtn = aa_group:button("\vLoad Config", function()
@@ -275,7 +274,7 @@ Menu = {
             local names = ConfigSystem.get_config_names()
             
             if #names == 0 or idx < 0 or idx >= #names then
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Select a config first!")
                 return
             end
@@ -287,10 +286,10 @@ Menu = {
                 local success, data = pcall(json.parse, base64.decode(db[name]))
                 if success then
                     ConfigSystem:load(data)
-                    client.color_log(137, 156, 255, "[Success] ")
+                    client.color_log(137, 156, 255, "[Success] \0")
                     client.color_log(255, 255, 255, "Config '" .. name .. "' loaded!")
                 else
-                    client.color_log(255, 100, 100, "[Error] ")
+                    client.color_log(255, 100, 100, "[Error] \0")
                     client.color_log(255, 255, 255, "Failed to load config!")
                 end
             end
@@ -300,7 +299,7 @@ Menu = {
             local names = ConfigSystem.get_config_names()
             
             if #names == 0 or idx < 0 or idx >= #names then
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Select a config first!")
                 return
             end
@@ -318,7 +317,7 @@ Menu = {
                 ui.set(Menu.Home.ConfigList.ref, new_idx)
             end
             
-            client.color_log(137, 156, 255, "[Success] ")
+            client.color_log(137, 156, 255, "[Success] \0")
             client.color_log(255, 255, 255, "Config '" .. name .. "' deleted!")
         end),
         RefreshBtn = aa_group:button("\vRefresh List", function()
@@ -329,7 +328,7 @@ Menu = {
         ImportBtn = aa_group:button("\vImport from Clipboard", function()
             local code = clipboard.import()
             if code == "" then
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Clipboard is empty!")
                 return
             end
@@ -337,10 +336,10 @@ Menu = {
             local success, data = pcall(json.parse, base64.decode(code))
             if success then
                 ConfigSystem:load(data)
-                client.color_log(137, 156, 255, "[Success] ")
+                client.color_log(137, 156, 255, "[Success] \0")
                 client.color_log(255, 255, 255, "Config imported!")
             else
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Invalid config code!")
             end
         end),
@@ -349,7 +348,7 @@ Menu = {
             local names = ConfigSystem.get_config_names()
             
             if #names == 0 or idx < 0 or idx >= #names then
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Select a config first!")
                 return
             end
@@ -360,10 +359,10 @@ Menu = {
             if db[name] then
                 local encrypted = db[name]
                 clipboard.export(encrypted)
-                client.color_log(137, 156, 255, "[Success] ")
+                client.color_log(137, 156, 255, "[Success] \0")
                 client.color_log(255, 255, 255, "Config '" .. name .. "' copied to clipboard!")
             else
-                client.color_log(255, 100, 100, "[Error] ")
+                client.color_log(255, 100, 100, "[Error] \0")
                 client.color_log(255, 255, 255, "Config not found!")
             end
         end)
@@ -540,7 +539,7 @@ local function on_aim_hit(e)
     end
     
     if ui.get(Menu.Visuals.ConsoleLogs.ref) then
-        client.color_log(172, 224, 13, "[+]\0")
+        client.color_log(172, 224, 13, "[+] \0")
         client.color_log(255, 255, 255, text)
     end
 end
@@ -558,7 +557,7 @@ local function on_aim_miss(e)
     end
     
     if ui.get(Menu.Visuals.ConsoleLogs.ref) then
-        client.color_log(255, 0, 0, "[-]\0")
+        client.color_log(255, 0, 0, "[-] \0")
         client.color_log(255, 255, 255, text)
     end
 end
